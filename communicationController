@@ -1,10 +1,9 @@
 # Learning Kotlin 1.1
 
-## communication Controller - Data Classes
+## Communication Controller - Data Classes
 
-
-We have in file DataClasses:
-1. this rappresents
+We have two classes in file DataClasses: 
+these are the responses from the server 
 @Serializable
 data class MenuItem(
     val mid: Int,
@@ -16,13 +15,123 @@ data class MenuItem(
     val deliveryTime: Int,
     var imageBase64: String? = null // Campo per l'immagine Base64
 )
-2. 
+
 @Serializable
 data class ImageResponse(
     val base64: String
 )
 
+## procedure 
+la risposta del server è ok si procede a :
+- convertire il corpo della risposta in una lista di MenuItem 
+- Per ogni menuItem si recupera l'immagine base64 e sia assegna la stringa al campo imagebase64  del menuItem
 
-## Setting Up Your Environment
 
-Before you can start developing with React Native, you need to set up your development environment. Follow the steps below to get started.
+##Error
+risposta server : oggetto JSON con un campo base64
+{
+  "base64": "iVBORw0KGgoAAAANSUh..."
+}
+
+inizialmente io avevo sbagliato perchè cercavo di deserializzare la stringa direttamente la la risposta del server è un oggetto e non una stringa 
+val imageBase64 = fetchMenuImage(menuItem.mid, sid)
+
+Da fare: deserializzare correttamente la risposta JSON in un oggetto ImageResponse,
+e poi estraggo la stringa Base64 dal campo base64
+
+
+##SOLUTION 
+ return if (httpResponse.status.value == 200) {
+        try {
+            // Deserializza la risposta in un oggetto ImageResponse
+            val imageResponse: ImageResponse = httpResponse.body()
+            imageResponse.base64 // Restituisci solo la stringa Base64
+        } catch (e: Exception) {
+            Log.e(TAG, "Errore durante il recupero dell'immagine: ${e.message}")
+            null
+        }
+    }
+
+####Come Funziona il Flusso
+1.Recupero della Lista dei Menu:
+La funzione fetchMenus recupera la lista dei menu dal server.
+Per ogni MenuItem nella lista, chiama fetchMenuImage per ottenere l'immagine Base64.
+
+2.Recupero dell'Immagine:
+La funzione fetchMenuImage invia una richiesta al server per ottenere l'immagine in formato Base64.
+La risposta JSON ({"base64": "..."}) viene deserializzata in un oggetto ImageResponse.
+La stringa Base64 viene estratta dal campo base64 e restituita.
+
+3.Assegnazione dell'Immagine:
+La stringa Base64 restituita da fetchMenuImage viene assegnata al campo imgbase64 del MenuItem.
+
+val menuList = fetchMenus(lat, lng, sid) // Recupera la lista dei menu
+menuList.forEach { menuItem ->
+    val imageBase64 = fetchMenuImage(menuItem.mid, sid) // Recupera l'immagine Base64
+    menuItem.imgbase64 = imageBase64 // Assegna l'immagine al menuItem
+}
+
+
+### COMPOSABLE CON DUE VIEWMODEL
+@Composable
+fun MenuScreen(locationViewModel: LocationViewModel,menuViewModel: MenuViewModel){
+    val context= LocalContext.current
+    var hasPermission by remember {mutableStateOf(false) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasPermission = isGranted
+        if (isGranted) {
+            locationViewModel.fetchLocation()
+        } //need to handle permission denied
+    }
+
+    //effetto per richiedere i permessi di localizzazione 
+    LaunchedEffect(Unit) { //avvia la richiesta e il recupero della posizione quando il composable viene creato 
+        hasPermission=LocationHelper(context).checkLocationPermission(context)
+        if (hasPermission) {
+            locationViewModel.fetchLocation()
+        } else {
+            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+
+    }
+
+    // Osserva la posizione dell'utente come stato compose 
+    val location by locationViewModel.location.collectAsState() 
+    val errorMessage by locationViewModel.errorMessage.observeAsState()
+
+    // Effettua la chiamata ai menu solo quando la posizione è disponibile
+    LaunchedEffect(location) {
+        location?.let { locationData: LocationData ->
+            menuViewModel.fetchMenus() // recuper ai menu quando la posizione è disponibile 
+        }
+    }
+
+    // Gestisci anche gli errori
+    errorMessage?.let {
+        // Qui puoi mostrare un messaggio di errore, ad esempio un Snackbar o un Toast
+        Log.e("MenuScreen", "Errore: $it")
+    }
+
+    /menus.observeAsState(emptyList() osserva la lista dei menu e la visualizza nella ui 
+    val menus by menuViewModel.menus.observeAsState(emptyList())
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        // Mostra i menu
+        menus.forEach { menuItem ->
+            MenuItemView(menuItem)
+        }
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
