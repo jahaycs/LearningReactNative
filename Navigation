@@ -1,1 +1,71 @@
 ##Navigazione tra le schermate utilizzando Jetpack Compose Navigation
+- NavController:
+    È il componente principale che gestisce la navigazione tra le schermate.
+    Tiene traccia dello stack delle schermate e permette di navigare avanti e indietro.
+
+- NavHost:
+    È un contenitore che definisce le schermate disponibili e le loro rotte (route).
+    Ogni schermata è associata a una route (una stringa univoca).
+
+- Navigazione tra schermate:
+    Puoi navigare tra le schermate utilizzando il metodo navigate del NavController.
+    Puoi passare argomenti tra le schermate tramite la route.
+
+
+##COMPONENTI DI JETPACK COMPOSE che fornisce una struttura di base per costruire schermate conformi alle linee guida di Material Design.
+- TopBar: Una barra superiore (ad esempio, una toolbar o un'app bar).
+
+- BottomBar: Una barra inferiore (ad esempio, una navigation bar).
+
+- FloatingActionButton (FAB): Un pulsante fluttuante per azioni principali.
+
+- Snackbar: Per mostrare messaggi temporanei all'utente.
+
+- Content: L'area principale della schermata, dove viene visualizzato il contenuto.
+
+###step 1 
+puoi creare un oggetto o una seal class per tenere traccia delle schermate
+object AppRoutes {
+        const val MENU_SCREEN = "menu_screen"
+        const val MENU_DETAIL_SCREEN = "menu_detail_screen"
+        const val PROFILE_SCREEN = "profile_screen"
+        const val DELIVERY_STATUS_SCREEN = "delivery_status_screen"
+}
+
+
+###Step 2
+MainActivity :
+ setContent {
+            LearningTheme {
+
+                //crea il NavController
+                val navController = rememberNavController()
+
+                //configurazione NavHost
+                NavHost(
+                    navController = navController,
+                    startDestination =  AppRoutes.MENU_SCREEN
+                ) {
+                    //definisci le schermate
+                    composable(AppRoutes.MENU_SCREEN){
+                        HomeScreen(locationViewModel,menuViewModel,navController)
+                    }
+                    composable(AppRoutes.MENU_DETAIL_SCREEN){
+                        MenuDetailScreen(navController)
+                    }
+
+                    composable(AppRoutes.PROFILE_SCREEN){
+                        ProfileScreen(navController)
+                    }
+                }
+
+            }
+        }
+
+puoi fare:
+//richiede permessi di localizzazione, recupera posizione e avvia il recupero dei menu
+@Composable
+fun HomeScreen(locationViewModel: LocationViewModel, menuViewModel: MenuViewModel, navController: NavController){
+  }
+passi il navController come parametro 
+
